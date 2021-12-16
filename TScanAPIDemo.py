@@ -1,6 +1,6 @@
 from ctypes import *
 from PyQt5.QtWidgets import *
-from TSMsater_32 import TScanAPI
+import TScanAPI
 import sys
 import threading
 from threading import Lock, Thread
@@ -21,7 +21,7 @@ size = c_int(16)
 
 def ConnectAPI():
     TScanAPI.initialize_lib_tsmaster(True, False)
-    connectAPI = TScanAPI.tsapp_connect('', obj1)
+    connectAPI = TScanAPI.tsapp_connect("", obj1)
     if (connectAPI == 0):
         print("连接成功")
     connectAPI = TScanAPI.tsapp_register_event_can(obj1, OnRxCANEvent)
@@ -29,7 +29,7 @@ def ConnectAPI():
     # connectAPI = TScanAPI.tsapp_configure_baudrate_can(obj1, 0, c_double(500), 1)
     # connectAPI = TScanAPI.tsapp_configure_baudrate_can(obj1, 1, c_double(500), 1)
 
-    # CANFD波特率
+    # # CANFD波特率
     connectAPI = TScanAPI.tsapp_configure_baudrate_canfd(obj1, 0, c_double(500), c_double(2000),
                                                          TScanAPI.TLIBCANFDControllerType.lfdtISOCAN.value,
                                                          TScanAPI.TLIBCANFDControllerMode.lfdmNormal.value,
@@ -59,8 +59,9 @@ def SendMessage():
     FData = [0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17]
     for i in range(len(FData)):
         msg.FData[i] = FData[i]
-
-    ret = TScanAPI.tsapp_transmit_can_async(obj1, msg)
+    ms = c_float(100)
+    # ret = TScanAPI.tsapp_transmit_can_async(obj1, msg)
+    ret = TScanAPI.tscan_add_cyclic_msg_can(obj1, msg, ms)
     if (ret == 0):
         print('can报文发送成功')
     else:
@@ -75,7 +76,8 @@ def SendMessage():
     for i in range(len(FData1)):
         msg1.FData[i] = FData1[i]
 
-    ret = TScanAPI.tsapp_transmit_canfd_async(obj1, msg1)
+    # ret = TScanAPI.tsapp_transmit_canfd_async(obj1, msg1)
+    ret = TScanAPI.tscan_add_cyclic_msg_canfd(obj1, msg1,ms)
     if (ret == 0):
         print('canfd报文发送成功')
     else:
@@ -103,12 +105,12 @@ def OnCANRxEvent():
 
     for i in range(16):
         if list[i].FIdentifier != 0x00:
-            print("接收到1通道报文id= {:#x}".format(list[i].FIdentifier))
+            print("can接收到1通道报文id= {:#x}".format(list[i].FIdentifier))
 
     ret = TScanAPI.tsapp_receive_canfd_msgs(obj1, list1, size, chn, txrx)
     for i in range(16):
         if list1[i].FIdentifier != 0x00:
-            print("接收到1通道报文id={:#x}".format(list1[i].FIdentifier))
+            print("canfd接收到1通道报文id={:#x}".format(list1[i].FIdentifier))
 
 
 def DisConnectAPI():
@@ -119,6 +121,6 @@ if __name__ == '__main__':
     i = 5
     ConnectAPI()
     SendMessage()
-    time.sleep(1)
+    time.sleep(10)
     OnCANRxEvent()
     time.sleep(1)

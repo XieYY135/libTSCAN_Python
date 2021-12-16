@@ -112,7 +112,7 @@ def initialize_lib_tsmaster(AEnableFIFO: c_bool, AEnableTurbe: c_bool):
     dll.initialize_lib_tscan(AEnableFIFO, AEnableTurbe)
 
 
-# 连接硬件(ADeviceSerial != null:连接指定的设备 为null为任意硬件 )
+# 连接硬件(ADeviceSerial为null为任意硬件 )
 def tsapp_connect(ADeviceSerial: str, AHandle: c_size_t):
     r = dll.tscan_connect(ADeviceSerial, byref(AHandle))
     return r
@@ -187,6 +187,25 @@ def tsapp_transmit_canfd_sync(AHandle: c_size_t, Msg: TLIBCANFD, ATimeoutMS: c_i
     r = dll.tscan_transmit_canfd_async(AHandle, byref(Msg), ATimeoutMS)
     return r
 
+# 循环发送canfd报文
+def tscan_add_cyclic_msg_canfd(AHandle: c_size_t, Msg: TLIBCANFD, ATimeoutMS: c_float):
+    r = dll.tscan_add_cyclic_msg_canfd(AHandle, byref(Msg), ATimeoutMS)
+    return r
+
+# 删除循环发送canfd报文
+def tscan_delete_cyclic_msg_canfd(AHandle: c_size_t, Msg: TLIBCANFD):
+    r = dll.tscan_delete_cyclic_msg_canfd(AHandle, byref(Msg))
+    return r
+
+# 周期发送canfd报文
+def tscan_add_cyclic_msg_can(AHandle: c_size_t, Msg: TLIBCAN, ATimeoutMS: c_float):
+    r = dll.tscan_add_cyclic_msg_can(AHandle, byref(Msg), ATimeoutMS)
+    return r
+
+# 删除循环发送can报文
+def tscan_delete_cyclic_msg_can(AHandle: c_size_t, Msg: TLIBCAN):
+    r = dll.tscan_delete_cyclic_msg_can(AHandle, byref(Msg))
+    return r
 
 # 异步发送lin报文
 def tsapp_transmit_lin_async(AHandle: c_size_t, Msg: TLIBLIN):
@@ -197,12 +216,6 @@ def tsapp_transmit_lin_async(AHandle: c_size_t, Msg: TLIBLIN):
 # 同步发送lin报文
 def tsapp_transmit_lin_sync(AHandle: c_size_t, Msg: TLIBLIN, ATimeoutMS: c_int32):
     r = dll.tslin_transmit_lin_sync(AHandle, byref(Msg), ATimeoutMS)
-    return r
-
-
-# 异步发送lin报文
-def tsapp_transmit_lin_async(AHandle: c_size_t, Msg: TLIBLIN):
-    r = dll.tslin_transmit_lin_async(AHandle, byref(Msg))
     return r
 
 
