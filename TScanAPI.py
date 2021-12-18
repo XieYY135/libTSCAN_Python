@@ -97,19 +97,13 @@ class TLIBLIN(Structure):
                 ]
 
 
-PCAN = POINTER(TLIBCAN)
-OnTx_RxFUNC_CAN = WINFUNCTYPE(None, PCAN)
-
-PLIN = POINTER(TLIBLIN)
-OnTx_RxFUNC_LIN = WINFUNCTYPE(None, PLIN)
-
-PCANFD = POINTER(TLIBCANFD)
-OnTx_RxFUNC_CANFD = WINFUNCTYPE(None, PCANFD)
+def finalize_lib_tscan():
+    dll.finalize_lib_tscan()
 
 
 # 初始化函数（是否使能fifo,是否激活极速模式）
 def initialize_lib_tsmaster(AEnableFIFO: c_bool, AEnableTurbe: c_bool):
-    dll.initialize_lib_tscan(AEnableFIFO, AEnableTurbe)
+    dll.initialize_lib_tscan(AEnableFIFO, AEnableTurbe, True)
 
 
 # 连接硬件(ADeviceSerial为null为任意硬件 )
@@ -187,25 +181,30 @@ def tsapp_transmit_canfd_sync(AHandle: c_size_t, Msg: TLIBCANFD, ATimeoutMS: c_i
     r = dll.tscan_transmit_canfd_async(AHandle, byref(Msg), ATimeoutMS)
     return r
 
+
 # 循环发送canfd报文
 def tscan_add_cyclic_msg_canfd(AHandle: c_size_t, Msg: TLIBCANFD, ATimeoutMS: c_float):
     r = dll.tscan_add_cyclic_msg_canfd(AHandle, byref(Msg), ATimeoutMS)
     return r
+
 
 # 删除循环发送canfd报文
 def tscan_delete_cyclic_msg_canfd(AHandle: c_size_t, Msg: TLIBCANFD):
     r = dll.tscan_delete_cyclic_msg_canfd(AHandle, byref(Msg))
     return r
 
+
 # 周期发送canfd报文
 def tscan_add_cyclic_msg_can(AHandle: c_size_t, Msg: TLIBCAN, ATimeoutMS: c_float):
     r = dll.tscan_add_cyclic_msg_can(AHandle, byref(Msg), ATimeoutMS)
     return r
 
+
 # 删除循环发送can报文
 def tscan_delete_cyclic_msg_can(AHandle: c_size_t, Msg: TLIBCAN):
     r = dll.tscan_delete_cyclic_msg_can(AHandle, byref(Msg))
     return r
+
 
 # 异步发送lin报文
 def tsapp_transmit_lin_async(AHandle: c_size_t, Msg: TLIBLIN):
@@ -252,6 +251,137 @@ def tsapp_receive_lin_msgs(AHandle: c_size_t, ALINBuffers: TLIBLIN, ALINBufferSi
     return r
 
 
+# 诊断相关API
+
+# 创建诊断服务
+def tsdiag_can_create(pDiagModuleIndex: c_int32, AChnIndex: CHANNEL_INDEX, ASupportFDCAN: c_byte, AMaxDLC: c_byte,
+                      ARequestID: c_uint32, ARequestIDIsStd: bool, AResponseID: c_uint32, AResponseIDIsStd: bool,
+                      AFunctionID: c_uint32, AFunctionIDIsStd: bool):
+    r = dll.tsdiag_can_create(byref(pDiagModuleIndex), AChnIndex, ASupportFDCAN, AMaxDLC, ARequestID, ARequestIDIsStd,
+                              AResponseID, AResponseIDIsStd, AFunctionID, AFunctionIDIsStd)
+    return r
+
+
+# 删除诊断模块
+def tsdiag_can_delete(pDiagModuleIndex: c_int32):
+    r = tsdiag_can_delete(pDiagModuleIndex)
+    return r
+
+
+def tsdiag_can_delete_all():
+    r = dll.tsdiag_can_delete_all()
+    return r
+
+
+# 将诊断模块绑定到CAN工具
+def tsdiag_can_attach_to_tscan_tool(pDiagModuleIndex: c_int32, AHandle: c_size_t):
+    r = dll.tsdiag_can_attach_to_tscan_tool(pDiagModuleIndex, AHandle)
+    return r
+
+
+# 多帧发送
+def tstp_can_send_functional(pDiagModuleIndex: c_int32, AReqDataArray: bytearray, AReqDataSize: c_int32,
+                             ATimeOutMs: c_int32):
+    data = POINTER(c_byte * len(AReqDataArray))((c_byte * len(AReqDataArray))(*AReqDataArray))
+    r = dll.tstp_can_send_functional(pDiagModuleIndex, data, AReqDataSize, ATimeOutMs)
+    return r
+
+
+def tstp_can_send_request(pDiagModuleIndex: c_int32, AReqDataArray: bytearray, AReqDataSize: c_int32,
+                          ATimeOutMs: c_int32):
+    data = POINTER(c_byte * len(AReqDataArray))((c_byte * len(AReqDataArray))(*AReqDataArray))
+    r = dll.tstp_can_send_request(pDiagModuleIndex, data, AReqDataSize, ATimeOutMs)
+    return r
+
+
+def tstp_can_request_and_response(pDiagModuleIndex: c_int32, AReqDataArray: bytearray, AReqDataSize: c_int32,
+                                  AResponseDataArray: bytearray, AResponseDataSize: c_int32, ATimeOutMs: c_int32):
+    AReqdata = POINTER(c_byte * len(AReqDataArray))((c_byte * len(AReqDataArray))(*AReqDataArray))
+    AResdata = POINTER(c_byte * len(AResponseDataArray))((c_byte * len(AResponseDataArray))(*AResponseDataArray))
+    r = dll.tstp_can_request_and_response(pDiagModuleIndex, AReqdata, AReqDataSize, AResdata, byref(AResponseDataSize),
+                                          ATimeOutMs)
+    return r
+
+
+# 诊断服务
+
+def tsdiag_can_session_control(pDiagModuleIndex: c_int32, ASubSession: c_byte, ATimeoutMs: c_int32):
+    r = dll.tsdiag_can_session_control(pDiagModuleIndex, ASubSession, ATimeoutMs)
+    return r
+
+
+def tsdiag_can_routine_control(pDiagModuleIndex: c_int32, ARoutineControlType: c_byte, ARoutintID: c_uint16,
+                               ATimeoutMs: c_int32):
+    r = dll.tsdiag_can_routine_control(pDiagModuleIndex, ARoutineControlType, ARoutintID, ATimeoutMs)
+    return r
+
+
+def tsdiag_can_communication_control(pDiagModuleIndex: c_int32, AControlType: c_byte, ATimeoutMs: c_int32):
+    r = dll.tsdiag_can_communication_control(pDiagModuleIndex, AControlType, ATimeoutMs)
+    return r
+
+
+def tsdiag_can_security_access_request_seed(pDiagModuleIndex: c_int32, ALevel: c_int32, ARecSeed: bytearray,
+                                            ARecSeedSize: c_int32, ATimeoutMs: c_int32):
+    AReqdata = POINTER(c_byte * len(ARecSeed))((c_byte * len(ARecSeed))(*ARecSeed))
+    r = dll.tsdiag_can_security_access_request_seed(pDiagModuleIndex, ALevel, AReqdata, byref(ARecSeedSize), ATimeoutMs)
+    return r
+
+
+def tsdiag_can_security_access_send_key(pDiagModuleIndex: c_int32, ALevel: c_int32, AKeyValue: bytearray,
+                                        AKeySize: c_int32, ATimeoutMs: c_int32):
+    AReqdata = POINTER(c_byte * len(AKeyValue))((c_byte * len(AKeyValue))(*AKeyValue))
+    r = dll.tsdiag_can_security_access_send_key(pDiagModuleIndex, ALevel, AReqdata, AKeySize, ATimeoutMs)
+    return r
+
+
+def tsdiag_can_request_download(pDiagModuleIndex: c_int32, AMemAddr: c_uint32, AMemSize: c_uint32, ATimeoutMs: c_int32):
+    r = dll.tsdiag_can_request_download(pDiagModuleIndex, AMemAddr, AMemSize, ATimeoutMs)
+    return r
+
+
+def tsdiag_can_request_upload(pDiagModuleIndex: c_int32, AMemAddr: c_uint32, AMemSize: c_uint32, ATimeoutMs: c_int32):
+    r = dll.tsdiag_can_request_upload(pDiagModuleIndex, AMemAddr, AMemSize, ATimeoutMs)
+    return r
+
+
+def tsdiag_can_transfer_data(pDiagModuleIndex: c_int32, ASourceDatas: bytearray, ADataSize: c_int32, AReqCase: c_int32,
+                             ATimeoutMs: c_int32):
+    AReqdata = POINTER(c_byte * len(ASourceDatas))((c_byte * len(ASourceDatas))(*ASourceDatas))
+    r = dll.tsdiag_can_transfer_data(pDiagModuleIndex, AReqdata, ADataSize, AReqCase, ATimeoutMs)
+
+
+def tsdiag_can_request_transfer_exit(pDiagModuleIndex: c_int32, ATimeoutMs: c_int32):
+    r = dll.tsdiag_can_request_transfer_exit(pDiagModuleIndex, ATimeoutMs)
+    return r
+
+
+def tsdiag_can_write_data_by_identifier(pDiagModuleIndex: c_int32, ADataIdentifier: c_uint16, AWriteData: bytearray,
+                                        AWriteDataSize: c_int32, ATimeOutMs: c_int32):
+    AReqdata = POINTER(c_byte * len(AWriteData))((c_byte * len(AWriteData))(*AWriteData))
+    r = dll.tsdiag_can_write_data_by_identifier(pDiagModuleIndex, ADataIdentifier, AReqdata, AWriteDataSize, ATimeOutMs)
+    return r
+
+
+def tsdiag_can_read_data_by_identifier(pDiagModuleIndex: c_int32, ADataIdentifier: c_uint16, AReturnArray: bytearray,
+                                       AReturnArraySize: c_int32, ATimeOutMs: c_int32):
+    AReqdata = POINTER(c_byte * len(AReturnArray))((c_byte * len(AReturnArray))(*AReturnArray))
+    r = dll.tsdiag_can_write_data_by_identifier(pDiagModuleIndex, ADataIdentifier, AReqdata, AReturnArraySize,
+                                                ATimeOutMs)
+    return r
+
+
+# 回调事件区
+PCAN = POINTER(TLIBCAN)
+OnTx_RxFUNC_CAN = WINFUNCTYPE(None, PCAN)
+
+PLIN = POINTER(TLIBLIN)
+OnTx_RxFUNC_LIN = WINFUNCTYPE(None, PLIN)
+
+PCANFD = POINTER(TLIBCANFD)
+OnTx_RxFUNC_CANFD = WINFUNCTYPE(None, PCANFD)
+
+
 # 注册can发送接收事件
 def tsapp_register_event_can(AHandle: c_size_t, ACallback):
     r = dll.tscan_register_event_can(AHandle, ACallback)
@@ -274,7 +404,6 @@ def tsapp_register_event_lin(AHandle: c_size_t, ACallback):
 def tsapp_unregister_event_lin(AHandle: c_size_t, ACallback):
     r = dll.tslin_unregister_event_lin(AHandle, ACallback)
     return r
-
 
 
 # 回放blf
